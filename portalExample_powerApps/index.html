@@ -1,0 +1,1111 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="css/theme.css">
+<title>Via Varejo - Treinamento</title>
+<!-- Cabeçalho -->
+{% assign defaultlang = settings['LanguageLocale/Code'] | default: 'en-us' %}
+{% assign homeurl = website.adx_partialurl %}
+<div class="navbar navbar-inverse navbar-static-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+
+      <!--div class="visible-xs-block">
+              {% editable snippets 'Mobile Header' type: 'html' %}
+            </div-->
+      <div class="visible-sm-block visible-md-block visible-lg-block visible-xs-block navbar-brand">
+        {% editable snippets 'Mobile Header' type: 'html' %}
+      </div>
+      <button type="button" class="navbar-toggle collapsed" title="{{ snippets["Header/Toggle Navigation"] | default: resx['Toggle_Navigation'] | h }}" data-toggle="collapse" data-target="#navbar" aria-expanded="false" onclick="setHeight();">
+        <span class="sr-only">{{ snippets["Header/Toggle Navigation"] | default: resx['Toggle_Navigation'] | h }}</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      {% assign primary_nav = weblinks["Default"] %}
+      {% if primary_nav %}
+      <div class="navbar-right menu-bar {% if primary_nav.editable %}xrm-entity xrm-editable-adx_weblinkset{% endif %}" data-weblinks-maxdepth="2">
+        <ul class="nav navbar-nav weblinks" role="menubar">
+          {% for link in primary_nav.weblinks %}
+          {% unless forloop.first %}
+          <li class="divider-vertical" aria-hidden="true"></li>
+          {% endunless %}
+          {% if link.display_page_child_links %}
+          {% if link.url != null %}
+          {% assign sublinks = sitemap[link.url].children %}
+          {% endif %}
+          {% else %}
+          {% assign sublinks = link.weblinks %}
+          {% endif %}
+          <li role="none" class="weblink {% if sublinks.size > 0 %} dropdown{% endif %}">
+            <a role="menuitem" aria-label="{{ link.name | escape }}" {% if sublinks.size > 0 -%} href="#" class="dropdown-toggle" data-toggle="dropdown" {%- else -%} href="{{ link.url | escape }}" {%- endif -%} {%- if link.Open_In_New_Window %} target="_blank" {% endif -%} {%- if link.nofollow %} rel="nofollow" {% endif -%} {%- if link.tooltip %} title="{{ link.tooltip | escape }}" {% endif %}>
+              {%- if link.image -%}
+              {%- if link.image.url  -%}
+              {%- if link.image.url.first == '.' -%}
+              <span class="{{ link.image.url | split:'.' | join }}" aria-hidden="true"></span>
+              {%- endif -%}
+              {%- else -%}
+              <img src="{{ link.image.url | escape }}" alt="{{ link.image.alternate_text | default:link.tooltip | escape }}" {% if link.image.width %}width="{{ link.image.width | escape }}" {% endif %} {% if link.image.height %}height="{{ link.image.height | escape }}" {% endif %} />
+              {%- endif -%}
+              {%- endif -%}
+              {%- unless link.display_image_only -%}
+              {{ link.name | escape }}
+              {%- endunless -%}
+              {%- if sublinks.size > 0 -%}
+              <span class="caret"></span>
+              {%- endif -%}
+            </a>
+            {% if sublinks.size > 0 %}
+            <ul class="dropdown-menu" role="menu">
+              {% if link.name %}
+              <li role="none">
+                <a role="menuitem" aria-label="{{ link.name | escape }}" href="{{ link.url }}" {% if link.Open_In_New_Window %} target="_blank" {% endif %} {% if link.nofollow %}rel="nofollow" {% endif %} {% if link.tooltip %}title="{{ link.tooltip | escape }}" {% endif %}>{{ link.name | escape }}</a>
+              </li>
+              <div class="divider"></div>
+              {% endif %}
+              {% for sublink in sublinks %}
+              <li role="none">
+                <a role="menuitem" aria-label="{{ sublink.name | default:sublink.title | escape }}" href="{{ sublink.url }}" {% if sublink.Open_In_New_Window %} target="_blank" {% endif %} {% if sublink.nofollow %}rel="nofollow" {% endif %} {% if sublink.tooltip %}title="{{ sublink.tooltip | escape }}" {% endif %}>
+                  {{ sublink.name | default:sublink.title | escape }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% endfor %}
+          {% assign search_enabled = settings['Search/Enabled'] | boolean | default:true %}
+          {% if search_enabled %}
+          <li class="divider-vertical" aria-hidden="true"></li>
+          <li role="none" class="dropdown">
+            <a id="search" class="navbar-icon" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-label="{{ snippets["Header/Search/ToolTip"] | default:resx["Search_DefaultText"] | escape }}">
+              <span class="glyphicon glyphicon-search"></a>
+                        </a>
+                        <div class="dropdown-menu dropdown-search">
+                            {% include 'Search' search_id:'q' %}
+                        </div>
+                    </li>
+                    {% endif %}
+                    <li class="divider-vertical" aria-hidden="true"></li>
+                    {% if website.languages.size > 1 %}
+                    <li class="dropdown" role="none">
+                        <a class="dropdown-toggle" href="#" data-toggle="dropdown" role="menuitem" aria-label="{{ website.selected_language.name | escape }}" aria-haspopup="true" aria-expanded="false" title="{{ website.selected_language.name | escape }}">
+                            <span class="drop_language">{{ website.selected_language.name | escape }}</span>
+              <span class="caret"></span>
+            </a>
+            {% include 'Languages Dropdown' %}
+          </li>
+          <li class="divider-vertical" aria-hidden="true"></li>
+          {% endif %}
+          {% if user %}
+          <li class="dropdown" role="none">
+            <a href="#" class="dropdown-toggle" title="{{ user.fullname | escape }}" data-toggle="dropdown" role="menuitem" aria-haspopup="true" aria-expanded="false">
+              <span class="username">{{ user.fullname | escape }}</span>
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+              {% assign show_profile_nav = settings["Header/ShowAllProfileNavigationLinks"] | boolean | default:true %}
+              {% if show_profile_nav %}
+              {% assign profile_nav = weblinks["Profile Navigation"] %}
+              {% if profile_nav %}
+              {% for link in profile_nav.weblinks %}
+              <li role="none">
+                <a role="menuitem" aria-label="{{ link.name | escape }}" href="{{ link.url | escape }}" title="{{ link.name | escape }}">{{ link.name | escape }}</a>
+              </li>
+              {% endfor %}
+              {% endif %}
+              {% else %}
+              <li role="none"><a role="menuitem" aria-label="{{ snippets["Profile Link Text"] | default:resx["Profile_Text"] | escape }}" href="{{ sitemarkers['Profile'].url | escape }}">{{ snippets["Profile Link Text"] | default:resx["Profile_Text"] | escape }}</a></li>
+              {% endif %}
+              <li class="divider" role="separator" aria-hidden="true"></li>
+              <li role="none">
+                <a role="menuitem" aria-label="{{ snippets["links/logout"] | default:resx["Sign_Out"] | escape }}" href="{% if homeurl%}/{{ homeurl }}{% endif %}{{ website.sign_out_url_substitution }}" title="{{ snippets["links/logout"] | default:resx["Sign_Out"] | escape }}">
+                  {{ snippets["links/logout"] | default:resx["Sign_Out"] | escape }}
+                </a>
+              </li>
+            </ul>
+          </li>
+          {% else %}
+          <li role="none">
+            <a role="menuitem" aria-label="{{ snippets["links/login"] | default:resx["Sign_In"] | escape }}" href="{% if homeurl%}/{{ homeurl }}{% endif %}{{ website.sign_in_url_substitution }}">
+              {{ snippets["links/login"] | default:resx["Sign_In"] | escape }}
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+        {% editable primary_nav %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% substitution %}
+{% assign current_page = page.id %}
+{% assign sr_page = sitemarkers["Search"].id %}
+{% assign forum_page = sitemarkers["Forums"].id %}
+{% if current_page %}
+{% if current_page == sr_page or current_page == forum_page %}
+{% assign section_class = "section-landing-search" %}
+{% if current_page == forum_page %}
+{% assign section_class = "section-landing-forums" %}
+{% endif %}
+<section class="page_section {{ section_class | h }} color-inverse">
+  <div class="row sectionBlockLayout sectionFixedStyle" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 420px; background: url('/Homehero.png') center / cover no-repeat; padding: 8px; margin: 0px;">
+    <div class="container" style="display: flex; flex-wrap: wrap;">
+      <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column; justify-content: center;">
+        {% if current_page == sr_page %}
+        <h1>{% editable snippets 'Search/Title' default: resx["Discover_Contoso"] %}</h1>
+        {% include 'Search' search_id:'search_control' %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endsubstitution %}
+<script type="text/javascript">
+  window.onload = function() {
+    if (window.navigator.appName == "Microsoft Internet Explorer" || window.navigator.userAgent.indexOf("Trident") > 0) {
+      var searchElement = document.getElementById("search");
+      if (searchElement != null) searchElement.setAttribute("href", "");
+    }
+  };
+  function setHeight() {
+    var windowHeight = window.innerHeight - 140;
+    var navbar = document.getElementById("navbar");
+    if (navbar) {
+      navbar.style.maxHeight = windowHeight + "px";
+    }
+  }
+  window.addEventListener('resize', function(event) {
+    setHeight();
+  });
+</script>
+  <!-- Página Inicial -->
+<br>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <p></p>
+      <p></p>
+      <p></p>
+      <h1 id="welcome" style="color: rgb(0, 0, 0); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Bem-vindo à Via Varejo!</h1>
+      <h3>A maior força de vendas do Brasil para o seu negócio</h3><a href="https://trainingportalviavarejo.powerappsportals.com/aboutus/" aria-label="Conheça mais sobre a Via" style="margin: 16px 0px; padding: 2px 4px; color: rgb(0, 0, 0);">Conheça mais sobre a Via</a>
+      <p></p>
+    </div>
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/ViaVarejo-logo03.png?v=1614365676520" style="max-width: 100%; width: 100%; height: auto; margin-left: 0; margin-right: auto;"></div>
+  </div>
+</div><br><br>
+<div class="row sectionBlockLayout sectionPrimaryColor" style="display: flex; flex-wrap: wrap; text-align: center; min-height: auto; padding: 45px 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper02.jpg?v=1614110461106&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column; justify-content: center;">
+      <h2 id="proposta" style="color: #ffffff;"> Nossa proposta</h2>
+      <p style="text-align: center; margin-top: 16px;"></p>
+      <div style="color: #ffffff;">A Via Varejo opera marcas ícones do varejo brasileiro que há décadas estão presentes na mente, no coração e na casa dos brasileiros: Casas Bahia, Pontofrio e móveis Bartira. São mais de 60 anos de história, voltados a realizar os sonhos dos consumidores e de todos aqueles com quem se relaciona</div>
+      <div><br></div>
+      <div style="color: #ffffff;">Com um trabalho dedicado a tornar-se a principal Via de compras e de vendas do País, do jeito que os clientes querem, gostam e precisam, a companhia oferece oportunidades de carreira e de aprendizado para pessoas em busca de grandes desafios.</div>
+      <div><br></div>
+      <div style="color: #ffffff;">Com mais de mil lojas físicas e 26 centros de distribuição, a Via Varejo impacta a vida de milhares de brasileiros, movida pela realização e tendo o respeito como princípio básico de suas relações. Aqui, os mais de 45 mil funcionários são motivados por um ambiente diverso e acolhedor.</div>
+      <p></p>
+    </div>
+  </div>
+</div><br>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: auto; padding: 45px 8px; margin: 0px; background: rgb(240, 240, 240);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column; padding-bottom: 20px; width: 100%;">
+      <h2 style="color: #ba961e;">Como ser um parceiro?</h2>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" color="#001f02" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="users" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="svg-inline--fa fa-users fa-w-20" style="width: 344.983px; height: 106.20001525878905px;">
+        <path fill="currentColor" d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"></path>
+      </svg><a href="https://trainingportalviavarejo.powerappsportals.com/Account/Login/Register?returnUrl=%2F">
+        <h3 style="color: #001f02;">Cadastro</h3>
+      </a>
+      <p style="margin-top: 12px; color: #ba961e;">Você informa os dados da sua loja e dá o aceite no contrato de parceria&nbsp;</p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" color="#001f02" aria-hidden="true" focusable="false" data-prefix="far" data-icon="address-card" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="svg-inline--fa fa-address-card fa-w-18" style="width: 344.983px; height: 106.20001525878905px;">
+        <path fill="currentColor" d="M528 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h480c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zm0 400H48V80h480v352zM208 256c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm-89.6 128h179.2c12.4 0 22.4-8.6 22.4-19.2v-19.2c0-31.8-30.1-57.6-67.2-57.6-10.8 0-18.7 8-44.8 8-26.9 0-33.4-8-44.8-8-37.1 0-67.2 25.8-67.2 57.6v19.2c0 10.6 10 19.2 22.4 19.2zM360 320h112c4.4 0 8-3.6 8-8v-16c0-4.4-3.6-8-8-8H360c-4.4 0-8 3.6-8 8v16c0 4.4 3.6 8 8 8zm0-64h112c4.4 0 8-3.6 8-8v-16c0-4.4-3.6-8-8-8H360c-4.4 0-8 3.6-8 8v16c0 4.4 3.6 8 8 8zm0-64h112c4.4 0 8-3.6 8-8v-16c0-4.4-3.6-8-8-8H360c-4.4 0-8 3.6-8 8v16c0 4.4 3.6 8 8 8z"></path>
+      </svg>
+      <h3 style="color: #001f02;">Análise</h3>
+      <p style="margin-top: 12px; color: #ba961e;">Vamos analisar seu cadastro e entraremos em contato para orientá-lo sobre os próximos passos</p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" color="#001f02" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="money-bill-wave" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="svg-inline--fa fa-money-bill-wave fa-w-20" style="width: 344.983px; height: 106.20001525878905px;">
+        <path fill="currentColor" d="M621.16 54.46C582.37 38.19 543.55 32 504.75 32c-123.17-.01-246.33 62.34-369.5 62.34-30.89 0-61.76-3.92-92.65-13.72-3.47-1.1-6.95-1.62-10.35-1.62C15.04 79 0 92.32 0 110.81v317.26c0 12.63 7.23 24.6 18.84 29.46C57.63 473.81 96.45 480 135.25 480c123.17 0 246.34-62.35 369.51-62.35 30.89 0 61.76 3.92 92.65 13.72 3.47 1.1 6.95 1.62 10.35 1.62 17.21 0 32.25-13.32 32.25-31.81V83.93c-.01-12.64-7.24-24.6-18.85-29.47zM48 132.22c20.12 5.04 41.12 7.57 62.72 8.93C104.84 170.54 79 192.69 48 192.69v-60.47zm0 285v-47.78c34.37 0 62.18 27.27 63.71 61.4-22.53-1.81-43.59-6.31-63.71-13.62zM320 352c-44.19 0-80-42.99-80-96 0-53.02 35.82-96 80-96s80 42.98 80 96c0 53.03-35.83 96-80 96zm272 27.78c-17.52-4.39-35.71-6.85-54.32-8.44 5.87-26.08 27.5-45.88 54.32-49.28v57.72zm0-236.11c-30.89-3.91-54.86-29.7-55.81-61.55 19.54 2.17 38.09 6.23 55.81 12.66v48.89z"></path>
+      </svg>
+      <h3 style="color: #001f02;">Venda</h3>
+      <p style="margin-top: 12px; color: #ba961e;">Concluídas as configurações, pronto! Comece a vender nos maiores e-commerces do país</p>
+    </div>
+  </div>
+</div><br>
+<div class="row sectionBlockLayout sectionFixedStyle" style="display: flex; flex-wrap: wrap; text-align: left; min-height: auto; padding: 45px 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper02.jpg?v=1614111059802&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column; justify-content: center;">
+      <h2 style="color: #ffffff;"> Conte com uma força a mais!</h2>
+      <p style="margin-top: 16px; color: #ffffff;">Quer aumentar a exposição dos seus produtos e impulsionar o seu negócio? Nós temos a solução.</p><a href="https://trainingportalviavarejo.powerappsportals.com/relationship/" aria-label="Como é ser um cliente Via Varejo?" style="margin-top: 16px; padding: 2px 4px; color: #ffffff;">Como é ser um cliente Via Varejo?</a>
+    </div>
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/style01.png?v=1614110504850" alt="Imagem de crescimento" style="max-width: 100%; width: 100%; height: auto; margin-left: 0; margin-right: auto;"></div>
+  </div>
+</div><br>
+<!-- Sobre nós -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper02.jpg?v=1614109113828&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h1 id="titleeffect" style="text-align: center; color: #e6e6e6; margin-left: 0; margin-right: auto; width: 1114.733px; height: 52px;">Conheça mais sobre a gente!<br>‌</h1><iframe frameborder="0" idth="560" height="315" src="https://www.youtube.com/embed/IHW8OQ1fqHg" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="" style="text-align: center; color: #e6e6e6; margin-left: 0; margin-right: auto; width: 1114.733px; height: 552px;"></iframe><br>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(224, 192, 103);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h1 style="text-align: center; color: #023600;">Nossa História</h1>
+    </div>
+  </div>
+</div>
+<div id="history" class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 300px; padding: 8px; margin: 0px; background: rgb(224, 192, 103);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h4>
+        <div style="color: #011c00;">A Via Varejo S.A é a empresa que opera marcas ícones do varejo e que há décadas estão presentes na mente, no coração e na casa dos brasileiros:&nbsp; Casas Bahia, Pontofrio, Extra.com.br e Bartira.</div>
+        <div><br></div>
+        <div style="color: #011c00;">Somos cerca de 50 mil colaboradores. Estamos presente em mais de 400 municípios, 20 Estados e no Distrito Federal e já somamos mais de 1.000 lojas. Com mais de 60 milhões de clientes, registramos uma receita bruta de R$ 30.6 bilhões em 2017.</div>
+        <div><br></div>
+        <div style="color: #011c00;">No e-commerce somos um dos líderes do mercado online, com mais de 2 milhões de SKUS e 15 milhões de pedidos por ano. Mas não paramos por aí! Os Serviços Financeiros são 7% da nossa receita bruta, resultando em mais de 1,7 milhão de clientes ativos no CDC e 5 milhões de clientes com crédito pré-aprovado. Além disso, somos um dos maiores vendedores de serviços e garantia estendida do país.</div>
+      </h4>
+    </div>
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/aboutus/wallpaper-via.jpg?v=1614109135264" style="box-shadow: 0 0px 36px 0 rgba(0,0,0,0.2); object-fit: cover; border-radius: 12px; max-width: 100%; width: 100%; height: 400.867px; margin-left: 0; margin-right: auto;"></div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper02.jpg?v=1614109158723&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h1 style="color: rgb(255, 255, 255); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Comprometimento<br>‌</h1>
+    </div>
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/aboutus/wallpaper-empresa.jpg?v=1614109178272" style="box-shadow: 0 0px 36px 0 rgba(0,0,0,0.2); object-fit: cover; border-radius: 12px; max-width: 100%; width: 100%; height: 338.233px; margin-left: 0; margin-right: auto;"><br></div>
+    <div class="col-md-6 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h1 style="color: #ffffff;"><br>‌Nossos 26 Centros de Distribuição e entrepostos equivalem a 138 campos de futebol. Com uma frota superior a 3 mil veículos, realizamos duas entregas por segundo. </h1><br>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 800px; padding: 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper-truck.jpg?v=1614364324682&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h1 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #3eba3c#396152;"><br>‌Nossos dados revelam a relevância de nossa dedicação<br></h1><svg color="#3eba3c" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="seedling" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-seedling fa-w-16" style="height: 60px;">
+        <path fill="currentColor" d="M64 96H0c0 123.7 100.3 224 224 224v144c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V320C288 196.3 187.7 96 64 96zm384-64c-84.2 0-157.4 46.5-195.7 115.2 27.7 30.2 48.2 66.9 59 107.6C424 243.1 512 147.9 512 32h-64z"></path>
+      </svg>{% powerbi authentication_type:"aad" path:"https://app.powerbi.com/groups/9a9b091b-5cd2-4a94-91cd-665a5c805458/dashboards/bcaaf70a-68ee-4ca8-8c0f-4a3d6fc24387"   %}<p style="text-align: center; color: #eb1717;"></p>
+      <p></p>
+    </div>
+  </div>
+</div>
+<!-- Clientes -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 1100px; padding: 8px; margin: 0px; background: rgb(132, 135, 133);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <div id="mySidenav" class="sidenav"><a href="javascript:void(0)" onclick="closeNav()" class="closebtn"><br>×</a><a href="https://trainingportalviavarejo.powerappsportals.com/casasbahia/"><br>Casas Bahia</a><a href="https://trainingportalviavarejo.powerappsportals.com/pontofrio/">Ponto Frio</a><a href="https://trainingportalviavarejo.powerappsportals.com/bartira/">Bartira</a><a href="#">Extra</a><a href="#">BanQI</a><a href="#">ASAP Log</a><a href="#">Distrito</a><a href="#">IQXP</a></div>
+      <h1 style="text-align: center; color: #ffffff;"><br>Somos parceiros das maiores integradoras do Brasil<br><br></h1><span onclick="openNav()" style="font-size: 30px; cursor: pointer; text-align: left; color: #ffffff;">☰ Nossos Clientes</span>
+      <script>
+        function openNav() {
+          document.getElementById("mySidenav").style.width = "250px";
+        }
+        function closeNav() {
+          document.getElementById("mySidenav").style.width = "0";
+        }
+      </script>
+      <section>
+        <nav text-align="left" id="testlist">
+          <h3 style="text-align: center; color: #dbbb52;">📫&nbsp;Nossas Sedes</h3>
+          <ul class="arrow">
+            <li><a href="#">São Paulo</a></li>
+            <li><a href="#">Guarulhos</a></li>
+            <li><a href="#">Campinas</a></li>
+            <li><a href="#">Santo André</a></li>
+            <li><a href="#">São José dos Campos</a></li>
+            <li><a href="#">Sorocaba</a></li>
+            <li><a href="#">Osasco</a></li>
+          </ul>
+          <h3 style="text-align: center; color: #dbbb52;">📦 Frota de Entrega</h3>
+          <ul class="arrow">
+            <li><a href="#">Caminhão 3/4</a></li>
+            <li><a href="#">Caminhão Toco</a></li>
+            <li><a href="#">Caminhão Truck</a></li>
+            <li><a href="#">Carreta 5 Eixos</a></li>
+            <li><a href="#">Carreta Eixo Extendido</a></li>
+            <li><a href="#">Van Sprinter</a></li>
+            <li><a href="#">Van Furgão</a></li>
+          </ul>
+          <h3 style="text-align: center; color: rgb(219, 187, 82); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">📊&nbsp;Nosso Crescimento</h3>
+          <ul class="arrow">
+            <li><a href="#">2014</a></li>
+            <li><a href="#">2015</a></li>
+            <li><a href="#">2016</a></li>
+            <li><a href="#">2017</a></li>
+            <li><a href="#">2018</a></li>
+            <li><a href="#">2019</a></li>
+            <li><a href="#">2020</a></li>
+          </ul>
+        </nav>
+        <article id="lateral">
+          <h1 style="color: #000000;">Lorem ipsum</h1>
+          <p style="color: #000000;">Lorem ipsum himenaeos ullamcorper suspendisse dictum diam auctor, vel nec aenean fusce auctor nunc potenti vitae, per quis tincidunt metus torquent auctor. iaculis inceptos nibh egestas tempor pellentesque elit, vehicula arcu curabitur dolor sodales nisi risus, imperdiet porttitor erat velit consequat. ligula suspendisse interdum commodo senectus, aenean morbi rutrum varius netus, ut amet curabitur. primis suscipit elit volutpat bibendum pretium rutrum urna, euismod fames in cras dui tristique consectetur vestibulum, fames metus class iaculis odio velit.</p>
+          <p style="color: #000000;">Justo ante platea gravida potenti vulputate laoreet potenti ullamcorper volutpat varius fringilla neque, malesuada tempus faucibus ultrices libero platea hac quam platea augue quam tempor, habitant condimentum sollicitudin etiam viverra dictumst suscipit elementum ultrices nullam amet. tristique tincidunt etiam mollis ipsum consectetur lobortis gravida lacinia, sit hendrerit orci dui aliquam rutrum urna imperdiet elementum, tellus sociosqu sollicitudin class lorem lacus sodales.<br>‌</p><img src="/aboutus/wallpaper-empresa.jpg?v=1614109178272" style="box-shadow: 0 36px 36px 0 rgba(0,0,0); object-fit: cover; border-radius: 12px; max-width: 100%; width: 162%; height: 476px; margin-left: auto; margin-right: auto;">
+        </article>
+      </section>
+      <section><br><br>
+        <nav text-align="left" id="testlist2">
+          <div>
+            <link rel="stylesheet">
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+          </div>
+          <div class="container" style="width: 80%;">
+            <h2 style="text-align: center; color: #b3090c;"></h2>
+            <h3 style="text-align: center; color: #dbbb52; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">💻 Nossa Rede</h3>
+            <div data-ride="carousel" class="carousel slide">
+
+              <!-- Wrapper for slides -->
+              <div class="carousel-inner">
+                <div class="item active"><img src="/new-page-3/little-carousel (1).png?v=1614881539770" alt="desconto1" style="max-width: 100%; width: 100%; height: auto; margin-left: auto; margin-right: auto;"></div>
+                <div class="item"><img src="/new-page-3/little-carousel.png?v=1614881472234" alt="desconto2" style="max-width: 100%; width: 100%; height: auto; margin-left: auto; margin-right: auto;"></div>
+                <div class="item"><img src="/new-page-3/little-carousel (2).png?v=1614881504455" alt="desconto3" style="max-width: 100%; width: 100%; height: auto; margin-left: auto; margin-right: auto;"></div>
+              </div>
+<!-- Left and right controls --><a href="#eletrodomesticos" data-slide="prev" class="left carousel-control"><span class="glyphicon glyphicon-chevron-left"></span><span class="sr-only">Previous</span></a><a href="#eletrodomesticos" data-slide="next" class="right carousel-control"><span class="glyphicon glyphicon-chevron-right"></span><span class="sr-only">Next</span></a>
+            </div><br><br>
+          </div>
+        </nav>
+      </section>
+    </div>
+  </div>
+</div>
+<!-- Seja Cliente -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; padding: 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper02.jpg&quot;); text-align: center;">
+  <div class="container">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><svg color="#ffffff" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="truck-moving" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="svg-inline--fa fa-truck-moving fa-w-20" style="width: 1102px; height: 139.21700762939452px;">
+        <path fill="currentColor" d="M621.3 237.3l-58.5-58.5c-12-12-28.3-18.7-45.3-18.7H480V64c0-17.7-14.3-32-32-32H32C14.3 32 0 46.3 0 64v336c0 44.2 35.8 80 80 80 26.3 0 49.4-12.9 64-32.4 14.6 19.6 37.7 32.4 64 32.4 44.2 0 80-35.8 80-80 0-5.5-.6-10.8-1.6-16h163.2c-1.1 5.2-1.6 10.5-1.6 16 0 44.2 35.8 80 80 80s80-35.8 80-80c0-5.5-.6-10.8-1.6-16H624c8.8 0 16-7.2 16-16v-85.5c0-17-6.7-33.2-18.7-45.2zM80 432c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32zm128 0c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32zm272-224h37.5c4.3 0 8.3 1.7 11.3 4.7l43.3 43.3H480v-48zm48 224c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32z"></path>
+      </svg>
+      <p></p>
+      <h1 style="color: #ffffff;">Solicitação de parceria</h1>
+      <p></p><br><br>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; padding: 8px; margin: 0px; text-align: left; min-height: 100px;">
+  <div class="container">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h2 style="color: #084203;"> Insira seus dados</h2>
+      <p style="color: #084203;">Os dados são enviados ao sistema</p>
+      <p></p>{% entityform name: 'Clientes' %}<br>
+    </div>
+  </div>
+</div>
+<!-- Relacionamentos -->
+<h1 style="color: rgb(0, 102, 12); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">O que constrói nosso relacionamento?</h1><br>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 50px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="accessible-icon" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-accessible-icon fa-w-14" style="height: 62.76700762939453px;">
+        <path fill="currentColor" d="M423.9 255.8L411 413.1c-3.3 40.7-63.9 35.1-60.6-4.9l10-122.5-41.1 2.3c10.1 20.7 15.8 43.9 15.8 68.5 0 41.2-16.1 78.7-42.3 106.5l-39.3-39.3c57.9-63.7 13.1-167.2-74-167.2-25.9 0-49.5 9.9-67.2 26L73 243.2c22-20.7 50.1-35.1 81.4-40.2l75.3-85.7-42.6-24.8-51.6 46c-30 26.8-70.6-18.5-40.5-45.4l68-60.7c9.8-8.8 24.1-10.2 35.5-3.6 0 0 139.3 80.9 139.5 81.1 16.2 10.1 20.7 36 6.1 52.6L285.7 229l106.1-5.9c18.5-1.1 33.6 14.4 32.1 32.7zm-64.9-154c28.1 0 50.9-22.8 50.9-50.9C409.9 22.8 387.1 0 359 0c-28.1 0-50.9 22.8-50.9 50.9 0 28.1 22.8 50.9 50.9 50.9zM179.6 456.5c-80.6 0-127.4-90.6-82.7-156.1l-39.7-39.7C36.4 287 24 320.3 24 356.4c0 130.7 150.7 201.4 251.4 122.5l-39.7-39.7c-16 10.9-35.3 17.3-56.1 17.3z"></path>
+      </svg>
+      <h3 style="text-align: center; color: #00660c;"> Acessibilidade</h3>
+      <p style="text-align: center; color: #998e15;">Facilidade na aproximação, no tratamento ou na aquisição de todos</p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="fist-raised" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" class="svg-inline--fa fa-fist-raised fa-w-12" style="height: 62.76700762939453px;">
+        <path fill="currentColor" d="M255.98 160V16c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v146.93c5.02-1.78 10.34-2.93 15.97-2.93h48.03zm128 95.99c-.01-35.34-28.66-63.99-63.99-63.99H207.85c-8.78 0-15.9 7.07-15.9 15.85v.56c0 26.27 21.3 47.59 47.57 47.59h35.26c9.68 0 13.2 3.58 13.2 8v16.2c0 4.29-3.59 7.78-7.88 8-44.52 2.28-64.16 24.71-96.05 72.55l-6.31 9.47a7.994 7.994 0 0 1-11.09 2.22l-13.31-8.88a7.994 7.994 0 0 1-2.22-11.09l6.31-9.47c15.73-23.6 30.2-43.26 47.31-58.08-17.27-5.51-31.4-18.12-38.87-34.45-6.59 3.41-13.96 5.52-21.87 5.52h-32c-12.34 0-23.49-4.81-32-12.48C71.48 251.19 60.33 256 48 256H16c-5.64 0-10.97-1.15-16-2.95v77.93c0 33.95 13.48 66.5 37.49 90.51L63.99 448v64h255.98v-63.96l35.91-35.92A96.035 96.035 0 0 0 384 344.21l-.02-88.22zm-32.01-90.09V48c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v112h32c11.28 0 21.94 2.31 32 5.9zM16 224h32c8.84 0 16-7.16 16-16V80c0-8.84-7.16-16-16-16H16C7.16 64 0 71.16 0 80v128c0 8.84 7.16 16 16 16zm95.99 0h32c8.84 0 16-7.16 16-16V48c0-8.84-7.16-16-16-16h-32c-8.84 0-16 7.16-16 16v160c0 8.84 7.16 16 16 16z"></path>
+      </svg>
+      <h3 style="text-align: center; color: #00660c;"> Força</h3>
+      <p style="text-align: center; color: #998e15;">O comprometimento com suas ações gera os melhores resultados&nbsp;</p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="people-carry" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="svg-inline--fa fa-people-carry fa-w-20" style="height: 62.76700762939453px;">
+        <path fill="currentColor" d="M128 96c26.5 0 48-21.5 48-48S154.5 0 128 0 80 21.5 80 48s21.5 48 48 48zm384 0c26.5 0 48-21.5 48-48S538.5 0 512 0s-48 21.5-48 48 21.5 48 48 48zm125.7 372.1l-44-110-41.1 46.4-2 18.2 27.7 69.2c5 12.5 17 20.1 29.7 20.1 4 0 8-.7 11.9-2.3 16.4-6.6 24.4-25.2 17.8-41.6zm-34.2-209.8L585 178.1c-4.6-20-18.6-36.8-37.5-44.9-18.5-8-39-6.7-56.1 3.3-22.7 13.4-39.7 34.5-48.1 59.4L432 229.8 416 240v-96c0-8.8-7.2-16-16-16H240c-8.8 0-16 7.2-16 16v96l-16.1-10.2-11.3-33.9c-8.3-25-25.4-46-48.1-59.4-17.2-10-37.6-11.3-56.1-3.3-18.9 8.1-32.9 24.9-37.5 44.9l-18.4 80.2c-4.6 20 .7 41.2 14.4 56.7l67.2 75.9 10.1 92.6C130 499.8 143.8 512 160 512c1.2 0 2.3-.1 3.5-.2 17.6-1.9 30.2-17.7 28.3-35.3l-10.1-92.8c-1.5-13-6.9-25.1-15.6-35l-43.3-49 17.6-70.3 6.8 20.4c4.1 12.5 11.9 23.4 24.5 32.6l51.1 32.5c4.6 2.9 12.1 4.6 17.2 5h160c5.1-.4 12.6-2.1 17.2-5l51.1-32.5c12.6-9.2 20.4-20 24.5-32.6l6.8-20.4 17.6 70.3-43.3 49c-8.7 9.9-14.1 22-15.6 35l-10.1 92.8c-1.9 17.6 10.8 33.4 28.3 35.3 1.2.1 2.3.2 3.5.2 16.1 0 30-12.1 31.8-28.5l10.1-92.6 67.2-75.9c13.6-15.5 19-36.7 14.4-56.7zM46.3 358.1l-44 110c-6.6 16.4 1.4 35 17.8 41.6 16.8 6.6 35.1-1.7 41.6-17.8l27.7-69.2-2-18.2-41.1-46.4z"></path>
+      </svg>
+      <h3 style="text-align: center; color: #00660c;"> Equipe</h3>
+      <p style="text-align: center; color: #998e15;">Uma equipe tende a render muito mais trabalhando junto</p>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 50px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="gem" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="svg-inline--fa fa-gem fa-w-18" style="height: 62.76700762939453px;">
+        <path fill="currentColor" d="M464 0H112c-4 0-7.8 2-10 5.4L2 152.6c-2.9 4.4-2.6 10.2.7 14.2l276 340.8c4.8 5.9 13.8 5.9 18.6 0l276-340.8c3.3-4.1 3.6-9.8.7-14.2L474.1 5.4C471.8 2 468.1 0 464 0zm-19.3 48l63.3 96h-68.4l-51.7-96h56.8zm-202.1 0h90.7l51.7 96H191l51.6-96zm-111.3 0h56.8l-51.7 96H68l63.3-96zm-43 144h51.4L208 352 88.3 192zm102.9 0h193.6L288 435.3 191.2 192zM368 352l68.2-160h51.4L368 352z"></path>
+      </svg>
+      <h3 style="text-align: center; color: #00660c;"> Excelência</h3>
+      <p style="text-align: center; color: #998e15;">Busca pela perfeição em todos nossos objetivos</p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="heart" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-heart fa-w-16" style="height: 62.76700762939453px;">
+        <path fill="currentColor" d="M458.4 64.3C400.6 15.7 311.3 23 256 79.3 200.7 23 111.4 15.6 53.6 64.3-21.6 127.6-10.6 230.8 43 285.5l175.4 178.7c10 10.2 23.4 15.9 37.6 15.9 14.3 0 27.6-5.6 37.6-15.8L469 285.6c53.5-54.7 64.7-157.9-10.6-221.3zm-23.6 187.5L259.4 430.5c-2.4 2.4-4.4 2.4-6.8 0L77.2 251.8c-36.5-37.2-43.9-107.6 7.3-150.7 38.9-32.7 98.9-27.8 136.5 10.5l35 35.7 35-35.7c37.8-38.5 97.8-43.2 136.5-10.6 51.1 43.1 43.5 113.9 7.3 150.8z"></path>
+      </svg>
+      <h3 style="text-align: center; color: #00660c;"> Paixão</h3>
+      <p style="text-align: center; color: #998e15;">Paixão pelo crescimento</p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><svg id="allsvg" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="hand-holding-heart" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="svg-inline--fa fa-hand-holding-heart fa-w-18" style="height: 62.76700762939453px;">
+        <path fill="currentColor" d="M275.3 250.5c7 7.4 18.4 7.4 25.5 0l108.9-114.2c31.6-33.2 29.8-88.2-5.6-118.8-30.8-26.7-76.7-21.9-104.9 7.7L288 36.9l-11.1-11.6C248.7-4.4 202.8-9.2 172 17.5c-35.3 30.6-37.2 85.6-5.6 118.8l108.9 114.2zm290 77.6c-11.8-10.7-30.2-10-42.6 0L430.3 402c-11.3 9.1-25.4 14-40 14H272c-8.8 0-16-7.2-16-16s7.2-16 16-16h78.3c15.9 0 30.7-10.9 33.3-26.6 3.3-20-12.1-37.4-31.6-37.4H192c-27 0-53.1 9.3-74.1 26.3L71.4 384H16c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16h356.8c14.5 0 28.6-4.9 40-14L564 377c15.2-12.1 16.4-35.3 1.3-48.9z"></path>
+      </svg>
+      <h3 style="text-align: center; color: #00660c;"> Integridade</h3>
+      <p style="text-align: center; color: #998e15;">Honestidade e ética em todas nossas relações</p>
+    </div>
+  </div>
+</div>
+<p></p><br>
+<h1 style="color: rgb(0, 102, 12); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Apoiamos o seu crescimento!!</h1>
+<p></p>
+<h2 style="color: rgb(0, 102, 12); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Se você cresce, nós crescemos cada vez mais juntos</h2>
+<p></p>
+<p></p>
+<center><a href="https://trainingportalviavarejo.powerappsportals.com/contact/"><button style="color: #ffffff;">Entre em Contato</button></a></center><br>
+<!-- Entregas -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; padding: 8px; margin: 0px; background: url(&quot;/aboutus/wallpaper02.jpg&quot;); text-align: center;">
+  <div class="container">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><svg color="#ffffff" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="truck-moving" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="svg-inline--fa fa-truck-moving fa-w-20" style="width: 1102px; height: 139.21700762939452px;">
+        <path fill="currentColor" d="M621.3 237.3l-58.5-58.5c-12-12-28.3-18.7-45.3-18.7H480V64c0-17.7-14.3-32-32-32H32C14.3 32 0 46.3 0 64v336c0 44.2 35.8 80 80 80 26.3 0 49.4-12.9 64-32.4 14.6 19.6 37.7 32.4 64 32.4 44.2 0 80-35.8 80-80 0-5.5-.6-10.8-1.6-16h163.2c-1.1 5.2-1.6 10.5-1.6 16 0 44.2 35.8 80 80 80s80-35.8 80-80c0-5.5-.6-10.8-1.6-16H624c8.8 0 16-7.2 16-16v-85.5c0-17-6.7-33.2-18.7-45.2zM80 432c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32zm128 0c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32zm272-224h37.5c4.3 0 8.3 1.7 11.3 4.7l43.3 43.3H480v-48zm48 224c-17.6 0-32-14.4-32-32s14.4-32 32-32 32 14.4 32 32-14.4 32-32 32z"></path>
+      </svg>
+      <p></p>
+      <h1 style="color: #ffffff;">Solicitação de Entregas</h1>
+      <p></p><br><br>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h2 style="color: rgb(14, 59, 0); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Nossos Serviços</h2>{% include 'entity_list' key: 'Serviços' %}<br>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"></div>
+  </div>
+</div>
+<p></p>
+<h2 style="color: rgb(14, 59, 0); outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Após analisar nossos serviços, solicite sua Entrega:</h2>
+<p></p>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; min-height: 100px; padding: 8px; margin: 0px; background: rgb(255, 255, 255);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">{% entityform name: 'Entregas' %}</div>
+  </div>
+</div>
+<!-- Casas Bahia -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(0, 91, 176);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><br>
+      <div id="topnavcasasbahia" class="topnav"><a href="#" class="active">Home</a><a href="#">Eletrodomésticos</a><a href="#">Televisores</a><a href="#">Móveis</a><a href="#">Informática</a></div>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><img id="titleeffect" src="/casasbahia/logo-casas_bahia-- Copy.png?v=1614884425232" style="max-width: 100%; width: 47%; height: 134.09699999999998px; margin-left: auto; margin-right: auto;"></div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h2 style="color: #005bb0; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Todos os dias produtos especiais</h2>
+      <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0f34ab;"><span style="font-weight: normal; color: #005bb0;">Mas corre que é por tempo limitado!</span></h2>
+      <h1 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0f34ab;"><span style="font-weight: normal; color: #db0f0f;"><br><b>OFERTAS DO DIA</b></span></h1><svg id="allsvg" color="#005bb0" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="percent" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-percent fa-w-14" style="height: 78.71000000000004px;">
+        <path fill="currentColor" d="M112 224c61.9 0 112-50.1 112-112S173.9 0 112 0 0 50.1 0 112s50.1 112 112 112zm0-160c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48zm224 224c-61.9 0-112 50.1-112 112s50.1 112 112 112 112-50.1 112-112-50.1-112-112-112zm0 160c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zM392.3.2l31.6-.1c19.4-.1 30.9 21.8 19.7 37.8L77.4 501.6a23.95 23.95 0 0 1-19.6 10.2l-33.4.1c-19.5 0-30.9-21.9-19.7-37.8l368-463.7C377.2 4 384.5.2 392.3.2z"></path>
+      </svg>
+      <p style="text-align: left;"></p>
+      <p></p>
+    </div>
+  </div>
+</div>
+<p></p>
+<p></p>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_lava.png" style="max-width: 100%; width: 68%; height: 348.306px; margin-left: auto; margin-right: auto;">
+      <p></p>
+      <h2 style="color: #005bb0; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+      <p></p>
+      <p></p>
+      <div>9Kg</div>
+      <div>CWB09AB</div>
+      <div>Dosagem Extra Econômica</div>
+      <div>Branca</div>
+      <p></p>
+      <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+      <p></p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_fogao.png" style="max-width: 100%; width: 66%; height: 348.819px; margin-left: auto; margin-right: auto;">
+      <p></p>
+      <h2 style="color: #005bb0; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Fogão Esmaltec</h2>
+      <p></p>
+      <p></p>
+      <div>4 Bocas</div>
+      <div>Veneza Super</div>
+      <div>Acendimento Automático</div>
+      <div>Branco</div>
+      <p></p>
+      <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 499,00</h1>
+      <p></p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_gela.png" style="max-width: 100%; width: 100%; height: 357.986px; margin-left: auto; margin-right: auto;">
+      <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #005bb0;"> Geladeira Frost Free</h2>
+      <p style="text-align: left;"></p>
+      <div>Electrolux&nbsp;</div>
+      <div>579 Litros&nbsp;</div>
+      <div>Inverse Cor Inox (DM84X)</div>
+      <div>220V</div>
+      <p></p>
+      <h1 style="color: #db0f0f;"> R$ 5.300,00</h1>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(0, 91, 176);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <p></p>
+      <h2 style="color: #c7c7c7; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Onde nos achar</h2>
+      <p></p>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(0, 91, 176);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><iframe frameborder="0" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d98402.08517049257!2d-46.667832717037356!3d-23.572405645636955!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0xe4fce4471582c2fd!2sCasas%20Bahia!5e0!3m2!1spt-BR!2sbr!4v1614724989349!5m2!1spt-BR!2sbr" width="600" height="450" allowfullscreen="" loading="lazy" style="border: 0; margin-left: 0; margin-right: auto; width: 1062px; height: 528.333px;"></iframe></div>
+  </div>
+</div>
+<!-- Bartira -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(11, 130, 216);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><br>
+      <div id="topnavbartira" class="topnav"><a href="#" class="active">Home</a><a href="#">Eletrodomésticos</a><a href="#">Televisores</a><a href="#">Móveis</a><a href="#">Informática</a></div>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(255, 255, 255);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><img id="titleeffect" src="/clients/logo-bartira.png?v=1614728163798" style="max-width: 100%; width: 36%; height: 101.86099999999999px; margin-left: auto; margin-right: auto;"></div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(255, 255, 255);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h2 style="color: #0b82d8; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Todos os dias produtos especiais</h2>
+      <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0f34ab;"><span style="font-weight: normal; color: #de1616;">Mas corre que é por tempo limitado!</span></h2>
+      <h1 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0f34ab;"><span style="font-weight: normal; color: #db0f0f;"><br><b style="color: #0055c4;">OFERTAS DO DIA</b></span></h1><svg id="allsvg" color="#de1616" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="percent" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-percent fa-w-14" style="height: 78.71000000000004px;">
+        <path fill="currentColor" d="M112 224c61.9 0 112-50.1 112-112S173.9 0 112 0 0 50.1 0 112s50.1 112 112 112zm0-160c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48zm224 224c-61.9 0-112 50.1-112 112s50.1 112 112 112 112-50.1 112-112-50.1-112-112-112zm0 160c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zM392.3.2l31.6-.1c19.4-.1 30.9 21.8 19.7 37.8L77.4 501.6a23.95 23.95 0 0 1-19.6 10.2l-33.4.1c-19.5 0-30.9-21.9-19.7-37.8l368-463.7C377.2 4 384.5.2 392.3.2z"></path>
+      </svg>
+      <p style="text-align: left;"></p>
+      <p></p>
+    </div>
+  </div>
+</div>
+<p></p>
+<p></p>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(255, 255, 255);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_lava.png" style="max-width: 100%; margin-left: auto; margin-right: auto; width: 276px; height: 348px;">
+      <p></p>
+      <h2 style="color: #0b82d8; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+      <p></p>
+      <p></p>
+      <div>9Kg</div>
+      <div>CWB09AB</div>
+      <div>Dosagem Extra Econômica</div>
+      <div>Branca</div>
+      <p></p>
+      <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+      <p></p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_fogao.png" style="max-width: 100%; width: 69%; height: auto; margin-left: auto; margin-right: auto;">
+      <p></p>
+      <h2 style="color: #0b82d8; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Fogão Esmaltec</h2>
+      <p></p>
+      <p></p>
+      <div>4 Bocas</div>
+      <div>Veneza Super</div>
+      <div>Acendimento Automático</div>
+      <div>Branco</div>
+      <p></p>
+      <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 499,00</h1>
+      <p></p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_gela.png" style="max-width: 100%; width: 104%; height: 364px; margin-left: auto; margin-right: auto;">
+      <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0b82d8;"> Geladeira Frost Free</h2>
+      <p style="text-align: left;"></p>
+      <div>Electrolux&nbsp;</div>
+      <div>579 Litros&nbsp;</div>
+      <div>Inverse Cor Inox (DM84X)</div>
+      <div>220V</div>
+      <p></p>
+      <h1 style="color: #db0f0f;"> R$ 5.300,00</h1>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(11, 130, 216);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <p></p>
+      <h2 style="color: #ffffff; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Onde nos achar</h2>
+      <p></p>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(11, 130, 216);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><iframe frameborder="0" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d116975.57818768125!2d-46.59437994179687!3d-23.622730799999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0xb449039fc50a3f8e!2sM%C3%B3veis%20Bartira!5e0!3m2!1spt-BR!2sbr!4v1614728828739!5m2!1spt-BR!2sbr" width="600" height="450" allowfullscreen="" loading="lazy" style="border: 0; width: 1118px; height: 466px;"></iframe></div>
+  </div>
+</div>
+<!-- Ponto Frio -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(179, 9, 12);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><br>
+      <div id="topnavpontofrio" class="topnav"><a href="#" class="active">Home</a><a href="https://trainingportalviavarejo.powerappsportals.com/eletro/">Eletrodomésticos</a><a href="#">Televisores</a><a href="#">Móveis</a><a href="#">Informática</a></div>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 200px; padding: 8px; margin: 0px; background: url(&quot;/pontofrio/loja-pontofrio.jpg?v=1614725423055&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><img id="titleeffect" src="/clients/logo-ponto_frio.png?v=1614725222541" style="max-width: 100%; width: 54%; height: 167.75px; margin-left: auto; margin-right: auto;"></div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <h2 style="color: #000000; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Todos os dias produtos especiais</h2>
+      <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0f34ab;"><span style="font-weight: normal; color: #000000;">Mas corre que é por tempo limitado!</span></h2>
+      <h1 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #0f34ab;"><span style="font-weight: normal; color: #db0f0f;"><br><b>OFERTAS DO DIA</b></span></h1><svg id="allsvg" color="#b3090c" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="percent" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-percent fa-w-14" style="height: 78.71000000000004px;">
+        <path fill="currentColor" d="M112 224c61.9 0 112-50.1 112-112S173.9 0 112 0 0 50.1 0 112s50.1 112 112 112zm0-160c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48zm224 224c-61.9 0-112 50.1-112 112s50.1 112 112 112 112-50.1 112-112-50.1-112-112-112zm0 160c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zM392.3.2l31.6-.1c19.4-.1 30.9 21.8 19.7 37.8L77.4 501.6a23.95 23.95 0 0 1-19.6 10.2l-33.4.1c-19.5 0-30.9-21.9-19.7-37.8l368-463.7C377.2 4 384.5.2 392.3.2z"></path>
+      </svg>
+      <p style="text-align: left;"></p>
+      <p></p>
+    </div>
+  </div>
+</div>
+<p></p>
+<p></p>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px;">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_lava.png?v=1614791405872" style="max-width: 100%; width: 70%; height: 348.306px; margin-left: auto; margin-right: auto;">
+      <p></p>
+      <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+      <p></p>
+      <p></p>
+      <div>9Kg</div>
+      <div>CWB09AB</div>
+      <div>Dosagem Extra Econômica</div>
+      <div>Branca</div>
+      <p></p>
+      <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+      <p></p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_fogao.png?v=1614791423442" style="max-width: 100%; width: 75%; height: 351.819px; margin-left: auto; margin-right: auto;">
+      <p></p>
+      <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Fogão Esmaltec</h2>
+      <p></p>
+      <p></p>
+      <div>4 Bocas</div>
+      <div>Veneza Super</div>
+      <div>Acendimento Automático</div>
+      <div>Branco</div>
+      <p></p>
+      <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 499,00</h1>
+      <p></p>
+    </div>
+    <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><img src="/pontofrio/eletro_gela.png?v=1614791432231" style="max-width: 100%; width: 103%; height: 360.986px; margin-left: auto; margin-right: auto;">
+      <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #cc3535;"> Geladeira Frost Free</h2>
+      <p style="text-align: left;"></p>
+      <div>Electrolux&nbsp;</div>
+      <div>579 Litros&nbsp;</div>
+      <div>Inverse Cor Inox (DM84X)</div>
+      <div>220V</div>
+      <p></p>
+      <h1 style="color: #db0f0f;"> R$ 5.300,00</h1>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 100px; padding: 8px; margin: 0px; background: rgb(179, 9, 12);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+      <p></p>
+      <h2 style="color: #c7c7c7; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center;">Onde nos achar</h2>
+      <p></p>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(179, 9, 12);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><iframe frameborder="0" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d468055.2526741843!2d-46.87179835317121!3d-23.579874068934775!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x6aa1cbafce997c87!2sPontofrio!5e0!3m2!1spt-BR!2sbr!4v1614728898068!5m2!1spt-BR!2sbr" width="600" height="450" allowfullscreen="" loading="lazy" style="border: 0; height: 549.333px; margin-left: auto; margin-right: auto; width: 1114.556px;"></iframe></div>
+  </div>
+</div>
+<!-- Eletrodomésticos -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(179, 9, 12);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><br>
+      <div id="topnavpontofrio" class="topnav"><a href="https://trainingportalviavarejo.powerappsportals.com/pontofrio/" class="active">Home</a><a href="#">Eletrodomésticos</a><a href="#">Televisores</a><a href="#">Móveis</a><a href="#">Informática</a></div>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: url(&quot;/eletro/red-rood-rojo-4k.jpg?v=1614806822663&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><img id="titleeffect" src="/eletro/logo-ponto_frio-- Copy.png?v=1614884182537" style="max-width: 100%; width: 52%; height: 161.75px; margin-left: auto; margin-right: auto;">
+      <h2 style="text-align: center;"><br>‌<br>‌Nossos produtos</h2><input type="text" id="myInput" onkeyup="myFunction()" placeholder="Procure um produto..." title="Type in a name">
+      <table id="myTable">
+        <tbody>
+          <tr class="header">
+            <th style="width: 40%;">Produto</th>
+            <th style="width: 30%;">Imagem</th>
+            <th style="width: 30%;">Valor</th>
+          </tr>
+          <tr>
+            <td>
+              <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #cc3535;"> Geladeira Frost Free</h2>
+              <p style="text-align: left;"></p>
+              <div>Electrolux&nbsp;</div>
+              <div>579 Litros&nbsp;</div>
+              <div>Inverse Cor Inox (DM84X)</div>
+              <div>220V</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 63%; height: 278.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: left; color: #cc3535;"> Geladeira Frost Free</h2>
+              <p style="text-align: left;"></p>
+              <div>Electrolux&nbsp;</div>
+              <div>579 Litros&nbsp;</div>
+              <div>Inverse Cor Inox (DM84X)</div>
+              <div>220V</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_gela.png?v=1614804925291" style="max-width: 100%; width: 52%; height: 234.97199999999998px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Fogão Esmaltec</h2>
+              <p></p>
+              <p></p>
+              <div>4 Bocas</div>
+              <div>Veneza Super</div>
+              <div>Acendimento Automático</div>
+              <div>Branco</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_fogao.png?v=1614804805680" style="max-width: 100%; width: 58%; height: 259.569px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+              <p></p>
+              <p></p>
+              <div>9Kg</div>
+              <div>CWB09AB</div>
+              <div>Dosagem Extra Econômica</div>
+              <div>Branca</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 59%; height: 259.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+        </tbody>
+      </table><a href="https://trainingportalviavarejo.powerappsportals.com/alleletro/" aria-label="Veja mais" style="margin: 16px 0px; padding: 2px 4px; color: #ffffff; text-align: left;">
+        <h4><strong>Veja mais...</strong></h4>
+      </a>
+      <script>
+        function myFunction() {
+          var input, filter, table, tr, td, i, txtValue;
+          input = document.getElementById("myInput");
+          filter = input.value.toUpperCase();
+          table = document.getElementById("myTable");
+          tr = table.getElementsByTagName("tr");
+          for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+              txtValue = td.textContent || td.innerText;
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+              } else {
+                tr[i].style.display = "none";
+              }
+            }
+          }
+        }
+      </script>
+      <div>
+        <link rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+      </div>
+      <div class="container" style="width: 80%;">
+        <h2 style="text-align: center; color: #b3090c;"><br>‌<br><br>‌<br>‌<br>‌‌Eletrodomésticos em Promoção!!</h2>
+        <div id="eletrodomesticos" data-ride="carousel" class="carousel slide">
+
+          
+          <div class="carousel-inner">
+            <div class="item active"><img src="/eletro/cupom-(1).png?v=1614798845575" alt="desconto1" style="max-width: 100%; width: 100%; height: auto; margin-left: 0; margin-right: auto;"></div>
+            <div class="item"><img src="/eletro/cupom-(2).png?v=1614798768953" alt="desconto2" style="max-width: 100%; width: 100%; height: auto; margin-left: 0; margin-right: auto;"></div>
+            <div class="item"><img src="/eletro/cupom.png?v=1614798744379" alt="desconto3" style="max-width: 100%; width: 100%; height: auto; margin-left: 0; margin-right: auto;"></div>
+          </div>
+            <a href="#eletrodomesticos" data-slide="prev" class="left carousel-control"><span class="glyphicon glyphicon-chevron-left"></span><span class="sr-only">Previous</span></a><a href="#eletrodomesticos" data-slide="next" class="right carousel-control"><span class="glyphicon glyphicon-chevron-right"></span><span class="sr-only">Next</span></a>
+        </div><br><br>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Todos Eletromésticos -->
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(179, 9, 12);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><br><br>
+      <div id="topnavpontofrio" class="topnav"><a href="https://trainingportalviavarejo.powerappsportals.com/pontofrio/" class="active">Home</a><a href="#">Eletrodomésticos</a><a href="#">Televisores</a><a href="#">Móveis</a><a href="#">Informática</a></div>
+    </div>
+  </div>
+</div>
+<div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: url(&quot;/eletro/red-rood-rojo-4k.jpg?v=1614806822663&quot;);">
+  <div class="container" style="display: flex; flex-wrap: wrap;">
+    <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;"><img id="titleeffect" src="/clients/logo-ponto_frio.png?v=1614725222541" style="max-width: 100%; width: 54%; height: 167.75px; margin-left: auto; margin-right: auto;">
+      <h2 style="text-align: center;"><br>‌<br>‌Procure o seu Eletrodoméstico!</h2><input type="text" id="myInput" onkeyup="myFunction()" placeholder="Procure um produto..." title="Type in a name">
+      <table id="myTable">
+        <tbody>
+          <tr class="header">
+            <th style="width: 40%;">Produto</th>
+            <th style="width: 30%;">Imagem</th>
+            <th style="width: 30%;">Valor</th>
+          </tr>
+          <tr>
+            <td>
+              <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: center; color: #cc3535;"> Geladeira Frost Free</h2>
+              <p style="text-align: left;"></p>
+              <div>Electrolux&nbsp;</div>
+              <div>579 Litros&nbsp;</div>
+              <div>Inverse Cor Inox (DM84X)</div>
+              <div>220V</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 63%; height: 278.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <h2 style="outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial; text-align: left; color: #cc3535;"> Geladeira Frost Free</h2>
+              <p style="text-align: left;"></p>
+              <div>Electrolux&nbsp;</div>
+              <div>579 Litros&nbsp;</div>
+              <div>Inverse Cor Inox (DM84X)</div>
+              <div>220V</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_gela.png?v=1614804925291" style="max-width: 100%; width: 52%; height: 234.97199999999998px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Fogão Esmaltec</h2>
+              <p></p>
+              <p></p>
+              <div>4 Bocas</div>
+              <div>Veneza Super</div>
+              <div>Acendimento Automático</div>
+              <div>Branco</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_fogao.png?v=1614804805680" style="max-width: 100%; width: 58%; height: 259.569px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+              <p></p>
+              <p></p>
+              <div>9Kg</div>
+              <div>CWB09AB</div>
+              <div>Dosagem Extra Econômica</div>
+              <div>Branca</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 59%; height: 259.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+              <p></p>
+              <p></p>
+              <div>9Kg</div>
+              <div>CWB09AB</div>
+              <div>Dosagem Extra Econômica</div>
+              <div>Branca</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 59%; height: 259.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+              <p></p>
+              <p></p>
+              <div>9Kg</div>
+              <div>CWB09AB</div>
+              <div>Dosagem Extra Econômica</div>
+              <div>Branca</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 59%; height: 259.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+              <p></p>
+              <p></p>
+              <div>9Kg</div>
+              <div>CWB09AB</div>
+              <div>Dosagem Extra Econômica</div>
+              <div>Branca</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 59%; height: 259.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p></p>
+              <h2 style="color: #cc3535; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">Lavadora de Roupas Consul</h2>
+              <p></p>
+              <p></p>
+              <div>9Kg</div>
+              <div>CWB09AB</div>
+              <div>Dosagem Extra Econômica</div>
+              <div>Branca</div>
+              <p></p>
+            </td>
+            <td><img src="/pontofrio/eletro_lava.png?v=1614804977204" style="max-width: 100%; width: 59%; height: 259.833px; margin-left: auto; margin-right: auto;"></td>
+            <td>
+              <h3>De R$ 2.000,00</h3>
+              <h4>Por</h4>
+              <h1 style="color: #db0f0f; outline-color: rgb(255, 255, 255); outline-width: 1.5px; border-width: 2px; border-color: rgb(27, 26, 25); border-image: initial;">R$ 1299,00</h1>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <script>
+        function myFunction() {
+          var input, filter, table, tr, td, i, txtValue;
+          input = document.getElementById("myInput");
+          filter = input.value.toUpperCase();
+          table = document.getElementById("myTable");
+          tr = table.getElementsByTagName("tr");
+          for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+              txtValue = td.textContent || td.innerText;
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+              } else {
+                tr[i].style.display = "none";
+              }
+            }
+          }
+        }
+      </script>
+    </div>
+  </div>
+</div>
+<!-- Rodapé -->
+<footer role="contentinfo" class="footer">
+  <div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: left; min-height: 10px; padding: 8px; margin: 0px; background: rgb(230, 230, 230);">
+    <div class="container" style="display: flex; flex-wrap: wrap;">
+      <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+        <section>
+          <nav text-align="left" id="copylist">
+            <center><br><br><br><input type="text" id="copylink" name="copylink" value="https://trainingportalviavarejo.powerappsportals.com/" readonly="true"><button onclick="copiarTexto()">Copiar Link da Página</button></center>
+            <script>
+              function copiarTexto() {
+                var textoCopiado = document.getElementById("copylink");
+                textoCopiado.select();
+                document.execCommand("Copy");
+                alert("Texto Copiado: " + textoCopiado.value);
+              }
+            </script>
+          </nav>
+          <article id="lateral">
+            <div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(230, 230, 230);">
+              <div class="container" style="display: flex; flex-wrap: wrap;">
+                <div class="col-md-12 columnBlockLayout" style="display: flex; flex-direction: column;">
+                  <h2 style="color: #636363;"> Contato<br>‌</h2>
+                  <p style="color: #636363;"> +55 11 99999-9999<br>‌viavarejo@contato.com.br</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+    </div>
+  </div>
+  <div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; text-align: center; min-height: 100px; padding: 8px; margin: 0px; background: rgb(230, 230, 230);">
+    <div class="container" style="display: flex; flex-wrap: wrap;">
+      <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><a target="_blank" href="https://www.facebook.com/VarejoVia/"><svg color="#636363" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="facebook-f" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="svg-inline--fa fa-facebook-f fa-w-10" style="width: 365px; height: 41.28301525878908px;">
+            <path fill="currentColor" d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"></path>
+          </svg></a></div>
+      <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><a target="_blank" href="https://www.instagram.com/viavarejo/?hl=pt-br"><svg color="#636363" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="instagram" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-instagram fa-w-14" style="height: 51.100007629394554px;">
+            <path fill="currentColor" d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"></path>
+          </svg></a></div>
+      <div class="col-md-4 columnBlockLayout" style="display: flex; flex-direction: column;"><a target="_blank" href="https://www.linkedin.com/company/viavarejo/"><svg color="#636363" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="linkedin-in" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-linkedin-in fa-w-14" style="height: 52.100007629394554px;">
+            <path fill="currentColor" d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"></path>
+          </svg></a></div>
+    </div>
+  </div>
+  <div class="footer-bottom hidden-print">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 col-sm-12 col-xs-12 text-left">
+          {% editable snippets 'Footer' type: 'html' %}
+        </div>
+      </div>
+    </div>
+</footer>
